@@ -104,9 +104,21 @@ export function buildFunnel() {
     evaluator: function(record){
       var created = (record['drivers-update'] || record['drivers-create']);
       var submitted = created && record['license_verification-create'];
-      var rejected = submitted && record['rejectReason'];
-      var account = !rejected && record['accounts-create'];
+      var approved = submitted && !record['rejectReason'];
+      var account = approved && record['accounts-create'];
       return account;
+    }
+  }
+
+  var licenseApprovedAndSessionAbandoned = {
+    origin: 'License Approved',
+    destination: 'Session Abandoned',
+    evaluator: function(record){
+      var created = (record['drivers-update'] || record['drivers-create']);
+      var submitted = created && record['license_verification-create'];
+      var approved = submitted && !record['rejectReason'];
+      var noAccount = approved && !record['accounts-create'];
+      return noAccount;
     }
   }
 
@@ -116,10 +128,33 @@ export function buildFunnel() {
     evaluator: function(record){
       var created = (record['drivers-update'] || record['drivers-create']);
       var submitted = created && record['license_verification-create'];
+
+      var approved = submitted && !record['rejectReason'];
+
       var rejected = submitted && record['rejectReason'];
-      var account = !rejected && record['accounts-create'];
-      var shown = account && record['rates-show'];
+
+      var created = (approved || rejected) && record['accounts-create'];
+
+      var shown = created && record['rates-show'];
       return shown;
+    }
+  }
+
+  var accountCreatedAndSessionAbandoned = {
+    origin: 'Account Created',
+    destination: 'Session Abandoned',
+    evaluator: function(record){
+      var created = (record['drivers-update'] || record['drivers-create']);
+      var submitted = created && record['license_verification-create'];
+
+      var approved = submitted && !record['rejectReason'];
+
+      var rejected = submitted && record['rejectReason'];
+
+      var created = (approved || rejected) && record['accounts-create'];
+
+      var abandoned = created && !record['rates-show'];
+      return abandoned;
     }
   }
 
@@ -129,9 +164,14 @@ export function buildFunnel() {
     evaluator: function(record){
       var created = (record['drivers-update'] || record['drivers-create']);
       var submitted = created && record['license_verification-create'];
+
+      var approved = submitted && !record['rejectReason'];
+
       var rejected = submitted && record['rejectReason'];
-      var account = !rejected && record['accounts-create'];
-      var shown = account && record['rates-show'];
+
+      var created = (approved || rejected) && record['accounts-create'];
+
+      var shown = created && record['rates-show'];
       var application = shown && record['sessions-application'];
       return application;
     }
@@ -143,11 +183,16 @@ export function buildFunnel() {
     evaluator: function(record){
       var created = (record['drivers-update'] || record['drivers-create']);
       var submitted = created && record['license_verification-create'];
+
+      var approved = submitted && !record['rejectReason'];
+
       var rejected = submitted && record['rejectReason'];
-      var account = !rejected && record['accounts-create'];
-      var shown = account && record['rates-show'];
-      var application = shown && record['sessions-application'];
-      return !application;
+
+      var created = (approved || rejected) && record['accounts-create'];
+
+      var shown = created && record['rates-show'];
+      var abandoned = shown && !record['sessions-application'];
+      return abandoned;
     }
   }
 
@@ -163,7 +208,9 @@ export function buildFunnel() {
     licenseApprovedAndAccountCreated,
     accountCreatedAndRatesShown,
     ratesShownAndApplicationCreated,
-    ratesShownAndSessionAbandoned
+    ratesShownAndSessionAbandoned,
+    licenseApprovedAndSessionAbandoned,
+    accountCreatedAndSessionAbandoned
   ];
 
   //{"source":0,"target":1,"value":124.729},
@@ -188,9 +235,9 @@ export function buildFunnel() {
     links: links
   };
 
-  var margin = {top: 1, right: 150, bottom: 6, left: 1},
+  var margin = {top: 1, right: 150, bottom: 200, left: 1},
     width = 1024 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 768 - margin.top - margin.bottom;
 
   var formatNumber = d3.format(",.0f"),
     format = function(d) { return formatNumber(d) + " sessions"; },
