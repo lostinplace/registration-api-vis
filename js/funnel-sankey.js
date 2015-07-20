@@ -20,7 +20,7 @@ export function buildFunnel() {
     origin: 'Session Created',
     destination: 'Session Abandoned',
     evaluator: function(record){
-      return !(record['drivers-update'] || record['drivers-create']);
+      return !(record['drivers-update'] || record['drivers-create'] || record['rates-show']);
     }
   }
 
@@ -177,6 +177,17 @@ export function buildFunnel() {
     }
   }
 
+  var sessionCreatedAndRatesShown = {
+    origin: 'Session Created',
+    destination: 'Rates Shown',
+    evaluator: function(record) {
+      var ratesShown = record['rates-show']
+      var anythingElse = (record['drivers-update'] || record['drivers-create'] || record['license_verification-create']);
+      anythingElse = anythingElse || (record['accounts-create'] || record['sessions-application']);
+      return ratesShown && !anythingElse;
+    }
+  }
+
   var ratesShownAndSessionAbandoned = {
     origin: 'Rates Shown',
     destination: 'Session Abandoned',
@@ -192,7 +203,7 @@ export function buildFunnel() {
 
       var shown = created && record['rates-show'];
       var abandoned = shown && !record['sessions-application'];
-      return abandoned;
+      return abandoned || sessionCreatedAndRatesShown.evaluator(record);
     }
   }
 
@@ -211,6 +222,8 @@ export function buildFunnel() {
     ratesShownAndSessionAbandoned,
     licenseApprovedAndSessionAbandoned,
     accountCreatedAndSessionAbandoned
+    ,sessionCreatedAndRatesShown
+
   ];
 
   //{"source":0,"target":1,"value":124.729},
