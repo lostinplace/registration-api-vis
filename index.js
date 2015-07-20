@@ -1,6 +1,7 @@
 var Hapi = require('hapi');
 var routes = require('./routes/routes');
 var server = new Hapi.Server();
+var Path = require('path');
 server.connection({ port: 3001 });
 
 routes.forEach(function(v){
